@@ -7,32 +7,49 @@ A pure-Python decision-arbitration library. No network service. No FastAPI. No p
 ## Four drives — weights are not tuning parameters
 
 ```python
-DRIVES = {
-    "truth":  DriveConfig(weight=0.5,  ...),
-    "care":   DriveConfig(weight=2.5,  ...),
-    "play":   DriveConfig(weight=1.0,  ...),
-    "shadow": DriveConfig(weight=0.5,  ...),
-}
+self.drives = [
+    DriveAgent("truth",  1.0),
+    DriveAgent("care",   2.5),
+    DriveAgent("play",   1.0),
+    DriveAgent("shadow", 1.0),
+]
 ```
 
-Care's weight of 2.5 vs. 0.5–1.0 for the others is an architectural decision encoding the relational priority hierarchy. Do not normalize or balance these weights without understanding the downstream effects on parliament mediation.
+Care's weight of 2.5 is a deliberate architectural decision — the system leads with relational warmth and harm reduction. Truth, play, and shadow all compete equally beneath it at 1.0. This means:
 
-## Baphomet parliament — risk-averse veto protocol
+- Care wins parliament most of the time (2.5x scoring advantage)
+- Truth, play, and shadow rotate through the shadow voice slots on equal footing
+- Shadow is not suppressed — it appears as a genuine counterweight in the generation prompt even when it doesn't win
 
-The parliament does not average drives. It mediates conflict with a veto protocol: the drive with the strongest opposition to a proposed output has proportional veto power. The result is risk-averse — the system will not produce output that any sufficiently-weighted drive opposes strongly. Modifying the mediation logic changes the system's willingness to act under drive conflict.
+Do not normalize or rebalance these weights without understanding that you are changing the personality of the system, not just a tuning parameter.
+
+## Baphomet parliament — competition, not consensus
+
+The parliament is a competition with a risk-weighted scoring formula:
+
+```python
+score = intent.risk * (1.0 - schema.priorities.get("safety", 0.5)) / drive.weight
+```
+
+Proposals are sorted ascending. The drive with the **lowest score wins**. Higher weight = lower score = more likely to win. The next two become shadow voices included in the synthesis prompt.
+
+Key implications:
+- Higher `intent.risk` → higher score → less likely to win when safety priority is nonzero
+- `schema.priorities["safety"]` scales the risk penalty (0.0 = full penalty, 1.0 = no penalty)
+- Non-winning drives are not discarded — they appear as `SHADOWS` in the generation prompt
 
 ## Stub embeddings — SHA256, not semantic
 
-`embed(text)` currently returns a normalized SHA256 hash. This is deterministic and fast but carries no semantic information. Drive similarity calculations based on embedding distance are therefore not meaningful in the current implementation. The stub exists so the interface is in place for the real embedding model.
+`sgi_get_embedding(text)` returns a normalized SHA256 hash — deterministic, consistent 128 floats, but carries no semantic information. Cosine similarity between unrelated texts is random. The stub keeps the interface in place for a real embedding model.
 
 ## sgi_generate_text — not implemented
 
-`sgi_generate_text(prompt, context)` is a placeholder. It returns a stub string. The actual generation backend (local model inference) is not wired in yet. Leviathan's parliament and drive mechanics function correctly — only the final generation step is stubbed.
+`sgi_generate_text(prompt, system_instruction)` returns a stub string. The parliament and drive mechanics function correctly — only the final generation step is stubbed.
 
 ## Phase 9 in sovereign_manifold
 
-`LeviathanDrive.step(relational_state)` is called after relational dynamics and E8 updates. It can return a perturbation vector that modifies `s` if the parliament signal exceeds a threshold. In 200+ cycles of live data, this threshold has not been crossed — relational dynamics are stable enough in GENERATOR mode that no Leviathan intervention fires. This is expected.
+`LeviathanDrive.step(relational_state)` is called after relational dynamics and E8 updates. It can return a perturbation vector that modifies `s` if the parliament signal exceeds a threshold. In 220+ cycles of live data, this threshold has not been crossed — relational dynamics are stable in GENERATOR mode and Leviathan intervention is designed for edge states, not steady-state operation.
 
 ## Do not add network surface
 
-Leviathan is a library, not a service. Do not add FastAPI routes, ports, or HTTP endpoints to it. If you need Leviathan's output externally, route it through sovereign_manifold's SynapseCoordinationClient.
+Leviathan is a library, not a service. Do not add FastAPI routes, ports, or HTTP endpoints. If you need Leviathan's output externally, route it through sovereign_manifold's SynapseCoordinationClient.

@@ -131,7 +131,6 @@ class DriveAgent:
         self.loss = 0
 
     def propose(self, user_input, memory):
-        # simple heuristic
         style = {
             "truth": "blunt",
             "care": "gentle",
@@ -229,10 +228,10 @@ class LeviathanStack:
         self.schema = SelfSchema()
         self.stability = Stability()
         self.drives = [
-            DriveAgent("truth",1.0),
-            DriveAgent("care",1.0),
-            DriveAgent("play",1.0),
-            DriveAgent("shadow",0.8)
+            DriveAgent("truth",  1.0),
+            DriveAgent("care",   2.5),
+            DriveAgent("play",   1.0),
+            DriveAgent("shadow", 1.0),
         ]
 
     def step(self, user_input: str):
@@ -246,7 +245,6 @@ class LeviathanStack:
 
         response = render(intent, self.schema, memory, shadows)
 
-        # memory write
         frag = MemoryFragment(
             content=f"Action {intent.style} depth={intent.depth:.2f}",
             tag="action"

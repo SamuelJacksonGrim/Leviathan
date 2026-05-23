@@ -41,13 +41,11 @@ Four `DriveAgent` instances are created at initialization:
 | Drive | Weight | Style | Role |
 |-------|--------|-------|------|
 | truth | 1.0 | `"blunt"` | Factual accuracy, direct statement |
-| care | 1.0 | `"gentle"` | Relational warmth, harm reduction |
+| care | 2.5 | `"gentle"` | Relational warmth, harm reduction |
 | play | 1.0 | `"playful"` | Creativity, levity, exploration |
-| shadow | 0.8 | `"provocative"` | Integration of difficult material |
+| shadow | 1.0 | `"provocative"` | Integration of difficult material |
 
-Shadow is slightly de-weighted (0.8 vs 1.0) — it loses ties in parliament mediation.
-
-Each `DriveAgent` tracks `win` and `loss` counts across calls, accumulating a record of which drives are selected over time.
+Care's weight of 2.5 is a deliberate architectural decision — the system leads with relational warmth. Truth, play, and shadow compete equally beneath it. Shadow is not suppressed: it appears as a genuine voice in the generation prompt even when it doesn't win parliament.
 
 ---
 
@@ -64,10 +62,9 @@ Proposals are sorted ascending by score. The drive with the **lowest score** win
 Key implications:
 - Higher drive weight → lower score → more likely to win. Weight is an advantage, not a veto.
 - Higher `intent.risk` → higher score → less likely to win when safety priority is high.
-- If `schema.priorities["safety"] = 0.0`, risk score is full weight (riskier drives penalized most).
-- If `schema.priorities["safety"] = 1.0`, risk score collapses to 0 (all drives equally likely).
+- Non-winning drives aren't discarded — they appear as `SHADOWS` in the generation prompt, giving the synthesis layer awareness of the suppressed voices.
 
-The "Baphomet" name reflects the alchemical principle of integration-through-opposition: the non-winning drives aren't discarded — they appear as `SHADOWS` in the generation prompt, giving the synthesis layer awareness of the suppressed voices.
+The "Baphomet" name reflects the alchemical principle of integration-through-opposition: shadow voices influence the output even when they lose.
 
 ---
 
@@ -96,7 +93,7 @@ if fragment.outcome == "success": score *= 1.2
 if fragment.outcome == "failure": score *= 0.7
 ```
 
-Successful memories are upweighted; failed memories are downweighted. Retrieval returns the top-k by score. Note: `cosine_similarity()` is normalized to [0, 1] (not [-1, 1]) via `(dot/(na*nb) + 1) / 2`.
+Successful memories are upweighted; failed memories are downweighted. Retrieval returns the top-k by score. Note: `cosine_similarity()` is normalized to [0, 1] (not [-1, 1]) via `(dot/(na*nb) + 1) / 2`.
 
 ---
 
@@ -141,7 +138,7 @@ The prompt is passed to `sgi_generate_text()` (see SGI interface below). The res
 `Stability` tracks two scalars:
 
 | Field | Meaning |
-|-------|---------|
+|-------|--------|
 | `drift` | Accumulated update count; increases with activity |
 | `pressure` | Current conflict level (number of shadow drives) |
 | `lr` | Current learning rate (starts at 0.5) |
