@@ -1,5 +1,11 @@
 # Leviathan
 
+[![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
+[![dual-license](https://img.shields.io/badge/dual--license-AGPL--3.0--only%20or%20commercial-blueviolet)](LICENSING.md)
+[![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)](https://www.python.org)
+![status](https://img.shields.io/badge/status-research-success)
+
+
 A pure-Python decision-arbitration library that models four internal drives, mediates between them via the Baphomet parliament protocol, maintains semantic memory, and produces text-generation guidance. It runs in-process — no network service, no ports. The primary integration point is `LeviathanDrive` inside `sovereign_manifold.py` (Phase 9 of each cycle).
 
 All logic is in a single file: `leviathan_stack.py`.
